@@ -1,0 +1,10 @@
+Revision history for Perl extension D64::Disk::BAM.
+
+0.02  2013-01-15
+    - fixed "Use of uninitialized value in numeric lt (<)" warning when
+      creating a new D64::Disk::BAM object without specific sector data
+
+0.01  2011-04-25
+    - initial version (provides methods to access, manage and manipulate the
+      contents of the BAM area of the Commodore disk images (supporting D64
+      format only)
