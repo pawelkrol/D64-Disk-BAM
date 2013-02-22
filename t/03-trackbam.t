@@ -4,7 +4,11 @@ use strict;
 use warnings;
 use IO::Capture::Stderr;
 use IO::Capture::Stdout;
-use Test::More qw/no_plan/;
+use Test::More tests => 42;
+#########################
+{
+    BEGIN { use_ok(q{D64::Disk::BAM}) };
+}
 #########################
 {
     sub get_empty_bam_object {
@@ -12,10 +16,6 @@ use Test::More qw/no_plan/;
         my $diskBAM = D64::Disk::BAM->new($sector_data);
         return $diskBAM;
     }
-}
-#########################
-{
-BEGIN { use_ok(q{D64::Disk::BAM}) };
 }
 #########################
 {

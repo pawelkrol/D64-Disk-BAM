@@ -4,6 +4,7 @@ WriteMakefile(
     VERSION_FROM      => 'BAM.pm',
     PREREQ_PM         => { 'IO::Capture::Stdout'    => 0,
                            'IO::Capture::Stderr'    => 0,
+                           'IO::Scalar'             => 0,
                            'Text::Convert::PETSCII' => 0,
                          },
     ($] >= 5.005 ?

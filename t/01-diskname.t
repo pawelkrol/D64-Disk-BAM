@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use IO::Capture::Stderr;
 use IO::Capture::Stdout;
-use Test::More qw/no_plan/;
+use Test::More tests => 20;
 use Text::Convert::PETSCII qw/:convert/;
 #########################
 {
@@ -26,7 +26,7 @@ use Text::Convert::PETSCII qw/:convert/;
 }
 #########################
 {
-BEGIN { use_ok(q{D64::Disk::BAM}) };
+    BEGIN { use_ok(q{D64::Disk::BAM}) };
 }
 #########################
 {

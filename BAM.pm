@@ -54,6 +54,12 @@ D64::Disk::BAM - Processing the BAM (Block Availability Map) area of the Commodo
   # Write BAM layout textual representation to a file handle:
   $diskBAM->print_out_bam_layout($fh);
 
+  # Print out formatted disk header line to a file handle:
+  $diskBAM->print_out_disk_header($fh);
+
+  # Print out number of free blocks line to a file handle:
+  $diskBAM->print_out_blocks_free($fh);
+
 =head1 DESCRIPTION
 
 Sector 0 of the directory track contains the BAM (Block Availability Map) and disk name/ID. This package provides the complete set of methods essential for accessing, managing and manipulating the contents of the BAM area of the Commodore disk images (note that only D64 format is supported).
@@ -66,7 +72,7 @@ use bytes;
 use strict;
 use warnings;
 
-our $VERSION = 0.02;
+our $VERSION = '0.03';
 
 use Carp qw/carp croak/;
 use Text::Convert::PETSCII qw/:convert/;
@@ -253,7 +259,7 @@ sub _empty_bam {
     $self->[0xa4]  = 0xa0;
     # A5-A6: DOS type, usually "2A"
     $self->[0xa5]  = ord ascii_to_petscii '2';
-    $self->[0xa6]  = ord ascii_to_petscii 'A';
+    $self->[0xa6]  = ord ascii_to_petscii 'a';
     # A7-AA: Filled with $A0
     $self->[0xa7]  = 0xa0;
     $self->[0xa8]  = 0xa0;
@@ -531,6 +537,7 @@ sub full_disk_id {
     # Remove padded $A0 bytes at the end of a PETSCII string:
     substr ($retrieved_full_disk_id, -1) = q{} while $retrieved_full_disk_id =~ m/\xa0$/;
     if ((not defined $full_disk_id and $convert) or (defined $full_disk_id and not $convert)) {
+        $retrieved_full_disk_id =~ s/\xa0/\x20/g;
         $retrieved_full_disk_id = petscii_to_ascii($retrieved_full_disk_id);
     }
     return $retrieved_full_disk_id;
@@ -636,6 +643,10 @@ sub _set_text_data {
 
 =head2 num_free_sectors
 
+Get the number of free sectors on an entire disk:
+
+  my $num_free_sectors = $diskBAM->num_free_sectors('all');
+
 Get the number of free sectors on the specified track:
 
   my $num_free_sectors = $diskBAM->num_free_sectors($track);
@@ -649,6 +660,15 @@ Returns an undefined value if invalid track number has been provided.
 sub num_free_sectors {
     my $self = shift;
     my $track = shift;
+    if (defined $track && $track eq 'all') {
+        my $directory_first_track = $self->directory_first_track();
+        my $num_free_sectors = 0;
+        for my $track (1 .. scalar @SECTORS_PER_TRACK) {
+            next if $track == $directory_first_track; # skip directory track
+            $num_free_sectors += $self->num_free_sectors($track);
+        }
+        return $num_free_sectors;
+    }
     unless ($self->_validate_track_number($track)) {
         carp sprintf qq{Unable to get the number of free sectors on that track};
         return undef;
@@ -863,6 +883,96 @@ sub print_out_bam_layout {
     }
 }
 
+=head2 print_out_disk_header
+
+Print out formatted disk header line to a file handle:
+
+  $diskBAM->print_out_disk_header($fh, $as_petscii);
+
+C<fh> defaults to the standard output. C<as_petscii> defaults to false (meaning that ASCII characters will be printed out by default).
+
+=cut
+
+sub print_out_disk_header {
+    my ($self, $fh, $as_petscii) = @_;
+
+    $fh ||= *STDOUT;
+    $fh->binmode(':bytes');
+
+    my $stdout = select $fh;
+
+    if ($as_petscii) {
+        # Get disk name as a PETSCII string:
+        my $disk_name = $self->disk_name(0);
+        $disk_name .= chr 0x20 while length $disk_name < 16;
+        $disk_name =~ s/\xa0/\x20/g;
+        # Get full disk ID as a PETSCII string:
+        my $full_disk_id = $self->full_disk_id(0);
+        $full_disk_id =~ s/\xa0/\x20/g;
+        # Setup an empty default disk header:
+        my @disk_header;
+        # Populate disk header with bytes:
+        push @disk_header, chr 0x30; # 0
+        push @disk_header, chr 0x20; # _
+        push @disk_header, chr 0x12; # RVS ON
+        push @disk_header, chr 0x22; # "
+        push @disk_header, split //, $disk_name;
+        push @disk_header, chr 0x22; # "
+        push @disk_header, chr 0x20; # _
+        push @disk_header, split //, $full_disk_id;
+        push @disk_header, chr 0x92; # RVS OFF
+        # Print out disk name and full disk ID:
+        print @disk_header;
+    }
+    else {
+        # Get disk name converted to an ASCII string:
+        my $disk_name = $self->disk_name(1);
+        # Get full disk ID converted to an ASCII string:
+        my $full_disk_id = $self->full_disk_id(1);
+        # Print out disk name and full disk ID:
+        printf q{0 "%-16s" %s}, $disk_name, $full_disk_id;
+    }
+
+    select $stdout;
+
+    return;
+}
+
+=head2 print_out_blocks_free
+
+Print out number of free blocks line to a file handle:
+
+  $diskBAM->print_out_blocks_free($fh, $as_petscii);
+
+C<fh> defaults to the standard output. C<as_petscii> defaults to false (meaning that ASCII characters will be printed out by default).
+
+=cut
+
+sub print_out_blocks_free {
+    my ($self, $fh, $as_petscii) = @_;
+
+    $fh ||= *STDOUT;
+    $fh->binmode(':bytes');
+
+    my $stdout = select $fh;
+
+    # Get number of free sectors on an entire disk:
+    my $num_free_sectors = $self->num_free_sectors('all');
+    my $blocks_free = sprintf q{%d blocks free.}, $num_free_sectors;
+
+    # Print out number of free blocks:
+    if ($as_petscii) {
+        print petscii_to_ascii $blocks_free;
+    }
+    else {
+        printf $blocks_free;
+    }
+
+    select $stdout;
+
+    return;
+}
+
 =head1 BUGS
 
 There are no known bugs at the moment. Please report any bugs or feature requests.
@@ -893,7 +1003,7 @@ Pawel Krol, E<lt>pawelkrol@cpan.orgE<gt>.
 
 =head1 VERSION
 
-Version 0.02 (2013-01-15)
+Version 0.03 (2013-02-22)
 
 =head1 COPYRIGHT AND LICENSE
 

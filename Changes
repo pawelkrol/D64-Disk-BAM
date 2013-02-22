@@ -1,5 +1,12 @@
 Revision history for Perl extension D64::Disk::BAM.
 
+0.03  2013-02-22
+    - added "print_out_disk_header" and "print_out_blocks_free" methods, which
+      become handy while printing out a disk image directory listing
+    - extended "num_free_sectors" method to accept an additional parameter
+      ('all'), which enables it to fetch number of free sectors from an entire
+      disk
+
 0.02  2013-01-15
     - fixed "Use of uninitialized value in numeric lt (<)" warning when
       creating a new D64::Disk::BAM object without specific sector data

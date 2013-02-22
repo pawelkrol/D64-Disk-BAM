@@ -1,5 +1,5 @@
-D64::Disk::BAM 0.02
-===================
+D64::Disk::BAM Version 0.03
+===========================
 
 D64::Disk::BAM provides the complete set of methods essential for accessing,
 managing and manipulating the contents of the BAM area of the Commodore disk
