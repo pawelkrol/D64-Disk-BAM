@@ -6,7 +6,7 @@ D64-Disk-BAM
 VERSION
 -------
 
-Version 0.03 (2013-02-22)
+Version 0.04 (2013-03-10)
 
 INSTALLATION
 ------------

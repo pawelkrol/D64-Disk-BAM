@@ -72,7 +72,7 @@ use bytes;
 use strict;
 use warnings;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use Carp qw/carp croak/;
 use Text::Convert::PETSCII qw/:convert/;
@@ -1003,13 +1003,15 @@ Pawel Krol, E<lt>pawelkrol@cpan.orgE<gt>.
 
 =head1 VERSION
 
-Version 0.03 (2013-02-22)
+Version 0.04 (2013-03-10)
 
 =head1 COPYRIGHT AND LICENSE
 
 Copyright 2011, 2013 by Pawel Krol <pawelkrol@cpan.org>.
 
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+This library is free open source software; you can redistribute it and/or modify it under the same terms as Perl itself, either Perl version 5.8.6 or, at your option, any later version of Perl 5 you may have available.
+
+PLEASE NOTE THAT IT COMES WITHOUT A WARRANTY OF ANY KIND!
 
 =cut
 

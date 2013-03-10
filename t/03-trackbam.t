@@ -2,8 +2,7 @@
 use bytes;
 use strict;
 use warnings;
-use IO::Capture::Stderr;
-use IO::Capture::Stdout;
+use Capture::Tiny qw(capture_stderr);
 use Test::More tests => 42;
 #########################
 {
@@ -50,32 +49,32 @@ use Test::More tests => 42;
 #########################
 {
     my $diskBAM = get_empty_bam_object();
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    my $num_free_sectors = $diskBAM->num_free_sectors(0);
-    $capture->stop();
+    my $num_free_sectors;
+    my $stderr = capture_stderr {
+        $num_free_sectors = $diskBAM->num_free_sectors(0);
+    };
     is($num_free_sectors, undef, q{num_free_sectors - number of free sectors on invalid track number});
-    like($capture->read, qr/^\QInvalid track number specified: 0\E/, q{num_free_sectors - unable to get the number of free sectors on invalid track});
+    like($stderr, qr/^\QInvalid track number specified: 0\E/, q{num_free_sectors - unable to get the number of free sectors on invalid track});
 }
 #########################
 {
     my $diskBAM = get_empty_bam_object();
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    my $is_sector_used = $diskBAM->sector_used(1, 21);
-    $capture->stop();
+    my $is_sector_used;
+    my $stderr = capture_stderr {
+        $is_sector_used = $diskBAM->sector_used(1, 21);
+    };
     is($is_sector_used, undef, q{sector_used - check sector allocation on invalid sector number});
-    like($capture->read, qr/^\QInvalid sector number specified: 21\E/, q{sector_used - unable to check sector allocation on invalid sector});
+    like($stderr, qr/^\QInvalid sector number specified: 21\E/, q{sector_used - unable to check sector allocation on invalid sector});
 }
 #########################
 {
     my $diskBAM = get_empty_bam_object();
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    my $is_sector_used = $diskBAM->sector_used(36, 1);
-    $capture->stop();
+    my $is_sector_used;
+    my $stderr = capture_stderr {
+        $is_sector_used = $diskBAM->sector_used(36, 1);
+    };
     is($is_sector_used, undef, q{sector_used - check sector allocation on invalid track number});
-    like($capture->read, qr/^\QInvalid track number specified: 36\E/, q{sector_used - unable to check sector allocation on invalid track});
+    like($stderr, qr/^\QInvalid track number specified: 36\E/, q{sector_used - unable to check sector allocation on invalid track});
 }
 #########################
 {
@@ -128,115 +127,108 @@ use Test::More tests => 42;
 #########################
 {
     my $diskBAM = get_empty_bam_object();
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    $diskBAM->sector_used(1, 0, 1);
-    my $is_sector_used = $diskBAM->sector_used(1, 0, 1);
-    $capture->stop();
+    my $is_sector_used;
+    my $stderr = capture_stderr {
+        $diskBAM->sector_used(1, 0, 1);
+        $is_sector_used = $diskBAM->sector_used(1, 0, 1);
+    };
     is($is_sector_used, 1, q{sector_used - check sector allocation on repeated allocation});
-    like($capture->read, qr/^\QWarning! Allocating sector 0 on track 1, which is already in use\E/, q{sector_used - allocating sector which is already in use});
+    like($stderr, qr/^\QWarning! Allocating sector 0 on track 1, which is already in use\E/, q{sector_used - allocating sector which is already in use});
 }
 #########################
 {
     my $diskBAM = get_empty_bam_object();
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    $diskBAM->sector_used(1, 0, 1);
-    $diskBAM->sector_used(1, 0, 0);
-    my $is_sector_used = $diskBAM->sector_used(1, 0, 0);
-    $capture->stop();
+    my $is_sector_used;
+    my $stderr = capture_stderr {
+        $diskBAM->sector_used(1, 0, 1);
+        $diskBAM->sector_used(1, 0, 0);
+        $is_sector_used = $diskBAM->sector_used(1, 0, 0);
+    };
     is($is_sector_used, 0, q{sector_used - check sector allocation on repeated deallocation});
-    like($capture->read, qr/^\QWarning! Deallocating sector 0 on track 1, which has been free before\E/, q{sector_used - deallocating sector which has been freed already});
+    like($stderr, qr/^\QWarning! Deallocating sector 0 on track 1, which has been free before\E/, q{sector_used - deallocating sector which has been freed already});
 }
 #########################
 {
     my $sector_data = 'AB';
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    my $diskBAM = get_empty_bam_object($sector_data);
-    $capture->stop();
+    my $diskBAM;
+    my $stderr = capture_stderr {
+        $diskBAM = get_empty_bam_object($sector_data);
+    };
     is($diskBAM, undef, q{_validate_bam_data - unable to create new BAM object based on empty sector data});
-    like($capture->read, qr/^\QFailed to validate the BAM sector data, expected the stream of 256 bytes but got 2 bytes\E/, q{_validate_bam_data - validation fails on empty sector data});
+    like($stderr, qr/^\QFailed to validate the BAM sector data, expected the stream of 256 bytes but got 2 bytes\E/, q{_validate_bam_data - validation fails on empty sector data});
 }
 #########################
 {
     my $diskBAM = get_empty_bam_object();
     my $sector_data = $diskBAM->get_bam_data();
     substr ($sector_data, 0x4c, 1) = chr 20;
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    $diskBAM = get_empty_bam_object($sector_data);
-    $capture->stop();
+    my $stderr = capture_stderr {
+        $diskBAM = get_empty_bam_object($sector_data);
+    };
     is($diskBAM, undef, q{_validate_bam_data - unable to create new BAM object with invalid number of empty sectors});
-    like($capture->read, qr/^\QFailed to validate the BAM sector data, invalid number of free sectors reported on track 19: claims 20 sectors free but track 19 has only 19 sectors\E/, q{_validate_bam_data - validation fails on invalid number of empty sectors});
+    like($stderr, qr/^\QFailed to validate the BAM sector data, invalid number of free sectors reported on track 19: claims 20 sectors free but track 19 has only 19 sectors\E/, q{_validate_bam_data - validation fails on invalid number of empty sectors});
 }
 #########################
 {
     my $diskBAM = get_empty_bam_object();
     my $sector_data = $diskBAM->get_bam_data();
     substr ($sector_data, 0x4c, 1) = chr -1;
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    $diskBAM = get_empty_bam_object($sector_data);
-    $capture->stop();
+    my $stderr = capture_stderr {
+        $diskBAM = get_empty_bam_object($sector_data);
+    };
     is($diskBAM, undef, q{_validate_bam_data - unable to create new BAM object with negative number of empty sectors});
-    like($capture->read, qr/^\QFailed to validate the BAM sector data, invalid number of free sectors reported on track 19: claims \E\d+\Q sectors free but track 19 has only 19 sectors\E/, q{_validate_bam_data - validation fails on negative number of empty sectors});
+    like($stderr, qr/^\QFailed to validate the BAM sector data, invalid number of free sectors reported on track 19: claims \E\d+\Q sectors free but track 19 has only 19 sectors\E/, q{_validate_bam_data - validation fails on negative number of empty sectors});
 }
 #########################
 {
     my $diskBAM = get_empty_bam_object();
     my $sector_data = $diskBAM->get_bam_data();
     substr ($sector_data, 0x00, 1) = chr 17;
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    $diskBAM = get_empty_bam_object($sector_data);
-    $capture->stop();
-    like($capture->read, qr/^Warning! Track location of the first directory sector should be set to 18, but it is not: 17 found in the BAM sector data/, q{_validate_bam_data - validation warns on invalid track location of the directory});
+    my $stderr = capture_stderr {
+        $diskBAM = get_empty_bam_object($sector_data);
+    };
+    like($stderr, qr/^Warning! Track location of the first directory sector should be set to 18, but it is not: 17 found in the BAM sector data/, q{_validate_bam_data - validation warns on invalid track location of the directory});
 }
 #########################
 {
     my $diskBAM = get_empty_bam_object();
     my $sector_data = $diskBAM->get_bam_data();
     substr ($sector_data, 0x01, 1) = chr 2;
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    $diskBAM = get_empty_bam_object($sector_data);
-    $capture->stop();
-    like($capture->read, qr/^Warning! Sector location of the first directory sector should be set to 1, but it is not: 2 found in the BAM sector data/, q{_validate_bam_data - validation warns on invalid sector location of the directory});
+    my $stderr = capture_stderr {
+        $diskBAM = get_empty_bam_object($sector_data);
+    };
+    like($stderr, qr/^Warning! Sector location of the first directory sector should be set to 1, but it is not: 2 found in the BAM sector data/, q{_validate_bam_data - validation warns on invalid sector location of the directory});
 }
 #########################
 {
     my $diskBAM = get_empty_bam_object();
     my $sector_data = $diskBAM->get_bam_data();
     substr ($sector_data, 0xa0, 2) = chr (1) . chr (2);
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    $diskBAM = get_empty_bam_object($sector_data);
-    $capture->stop();
-    like($capture->read, qr/^Warning! Bytes at offsets \$A0-\$A1 of the BAM sector data are expected to be filled with \$A0, but they are not/, q{_validate_bam_data - validation warns on encountering sections supposed to be filled with $A0});
+    my $stderr = capture_stderr {
+        $diskBAM = get_empty_bam_object($sector_data);
+    };
+    like($stderr, qr/^Warning! Bytes at offsets \$A0-\$A1 of the BAM sector data are expected to be filled with \$A0, but they are not/, q{_validate_bam_data - validation warns on encountering sections supposed to be filled with $A0});
 }
 #########################
 {
     my $diskBAM = get_empty_bam_object();
     my $sector_data = $diskBAM->get_bam_data();
     substr ($sector_data, 0xa7, 4) = chr (1) . chr (2) . chr(3) . chr(4);
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    $diskBAM = get_empty_bam_object($sector_data);
-    $capture->stop();
-    like($capture->read, qr/^Warning! Bytes at offsets \$A7-\$AA of the BAM sector data are expected to be filled with \$A0, but they are not/, q{_validate_bam_data - validation warns on encountering sections supposed to be filled with $A0});
+    my $stderr = capture_stderr {
+        $diskBAM = get_empty_bam_object($sector_data);
+    };
+    like($stderr, qr/^Warning! Bytes at offsets \$A7-\$AA of the BAM sector data are expected to be filled with \$A0, but they are not/, q{_validate_bam_data - validation warns on encountering sections supposed to be filled with $A0});
 }
 #########################
 {
     my $diskBAM = get_empty_bam_object();
     my $sector_data = $diskBAM->get_bam_data();
     substr ($sector_data, 0x45, 1) = chr 128;
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    $diskBAM = get_empty_bam_object($sector_data);
-    $capture->stop();
+    my $stderr = capture_stderr {
+        $diskBAM = get_empty_bam_object($sector_data);
+    };
     is($diskBAM, undef, q{_validate_bam_data - unable to create new BAM object with incorrect bitmap of empty sectors});
-    like($capture->read, qr/^\QFailed to validate the BAM sector data, number of free sectors on track 17 (which is claimed to be 21) does not match free sector allocation (which seems to be 17)\E/, q{_validate_bam_data - validation fails on incorrect bitmap of empty sectors});
+    like($stderr, qr/^\QFailed to validate the BAM sector data, number of free sectors on track 17 (which is claimed to be 21) does not match free sector allocation (which seems to be 17)\E/, q{_validate_bam_data - validation fails on incorrect bitmap of empty sectors});
 }
 #########################
 {

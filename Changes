@@ -1,5 +1,11 @@
 Revision history for Perl extension D64::Disk::BAM.
 
+0.04  2013-03-10
+    - Fixed failing unit-tests for Perl 5.6.2 by switching from IO::Capture
+      to Capture::Tiny which, unlikely its predecessor, is able to correctly
+      capture the contents written into a standard error filehandle also for
+      Perl 5.6.2
+
 0.03  2013-02-22
     - added "print_out_disk_header" and "print_out_blocks_free" methods, which
       become handy while printing out a disk image directory listing

@@ -1,8 +1,7 @@
 #########################
 use strict;
 use warnings;
-use IO::Capture::Stderr;
-use IO::Capture::Stdout;
+use Capture::Tiny qw(capture_stderr);
 use Test::More tests => 28;
 use Text::Convert::PETSCII qw/:convert/;
 #########################
@@ -62,22 +61,22 @@ use Text::Convert::PETSCII qw/:convert/;
 #########################
 {
     my $diskBAM = get_empty_bam_object();
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    my $disk_id = $diskBAM->disk_id(0, ascii_to_petscii('A'));
-    $capture->stop();
+    my $disk_id;
+    my $stderr = capture_stderr {
+        $disk_id = $diskBAM->disk_id(0, ascii_to_petscii('A'));
+    };
     is($disk_id, 'A', q{disk_id - set disk ID (too short length, check stored value)});
-    like($capture->read, qr/^\QDisk ID to be set contains 1 bytes: "A"\E/, q{disk_id - set disk ID (too short length, check issued warning)});
+    like($stderr, qr/^\QDisk ID to be set contains 1 bytes: "A"\E/, q{disk_id - set disk ID (too short length, check issued warning)});
 }
 #########################
 {
     my $diskBAM = get_empty_bam_object();
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    my $disk_id = $diskBAM->disk_id(0, ascii_to_petscii('A44'));
-    $capture->stop();
+    my $disk_id;
+    my $stderr = capture_stderr {
+        $disk_id = $diskBAM->disk_id(0, ascii_to_petscii('A44'));
+    };
     is($disk_id, 'A4', q{disk_id - set disk ID (too long length, check stored value)});
-    like($capture->read, qr/^\QDisk ID to be set contains 3 bytes: "A44"\E/, q{disk_id - set disk ID (too long length, check issued warning)});
+    like($stderr, qr/^\QDisk ID to be set contains 3 bytes: "A44"\E/, q{disk_id - set disk ID (too long length, check issued warning)});
 }
 #########################
 {
@@ -106,22 +105,22 @@ use Text::Convert::PETSCII qw/:convert/;
 #########################
 {
     my $diskBAM = get_empty_bam_object();
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    my $full_disk_id = $diskBAM->full_disk_id(0, ascii_to_petscii('BFUL'));
-    $capture->stop();
+    my $full_disk_id;
+    my $stderr = capture_stderr {
+        $full_disk_id = $diskBAM->full_disk_id(0, ascii_to_petscii('BFUL'));
+    };
     is($full_disk_id, 'BFUL', q{full_disk_id - set full disk ID (too short length, check stored value)});
-    like($capture->read, qr/^\QFull disk ID to be set contains 4 bytes: "BFUL"\E/, q{full_disk_id - set full disk ID (too short length, check issued warning)});
+    like($stderr, qr/^\QFull disk ID to be set contains 4 bytes: "BFUL"\E/, q{full_disk_id - set full disk ID (too short length, check issued warning)});
 }
 #########################
 {
     my $diskBAM = get_empty_bam_object();
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    my $full_disk_id = $diskBAM->full_disk_id(0, ascii_to_petscii('BFUL44'));
-    $capture->stop();
+    my $full_disk_id;
+    my $stderr = capture_stderr {
+        $full_disk_id = $diskBAM->full_disk_id(0, ascii_to_petscii('BFUL44'));
+    };
     is($full_disk_id, 'BFUL4', q{full_disk_id - set full disk ID (too long length, check stored value)});
-    like($capture->read, qr/^\QFull disk ID to be set contains 6 bytes: "BFUL44"\E/, q{full_disk_id - set full disk ID (too long length, check issued warning)});
+    like($stderr, qr/^\QFull disk ID to be set contains 6 bytes: "BFUL44"\E/, q{full_disk_id - set full disk ID (too long length, check issued warning)});
 }
 #########################
 {
@@ -150,21 +149,21 @@ use Text::Convert::PETSCII qw/:convert/;
 #########################
 {
     my $diskBAM = get_empty_bam_object();
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    my $dos_type = $diskBAM->dos_type(0, ascii_to_petscii('C'));
-    $capture->stop();
+    my $dos_type;
+    my $stderr = capture_stderr {
+        $dos_type = $diskBAM->dos_type(0, ascii_to_petscii('C'));
+    };
     is($dos_type, 'C', q{dos_type - set DOS type (too short length, check stored value)});
-    like($capture->read, qr/^\QDOS type to be set contains 1 bytes: "C"\E/, q{dos_type - set DOS type (too short length, check issued warning)});
+    like($stderr, qr/^\QDOS type to be set contains 1 bytes: "C"\E/, q{dos_type - set DOS type (too short length, check issued warning)});
 }
 #########################
 {
     my $diskBAM = get_empty_bam_object();
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    my $dos_type = $diskBAM->dos_type(0, ascii_to_petscii('C44'));
-    $capture->stop();
+    my $dos_type;
+    my $stderr = capture_stderr {
+        $dos_type = $diskBAM->dos_type(0, ascii_to_petscii('C44'));
+    };
     is($dos_type, 'C4', q{dos_type - set DOS type (too long length, check stored value)});
-    like($capture->read, qr/^\QDOS type to be set contains 3 bytes: "C44"\E/, q{dos_type - set DOS type (too long length, check issued warning)});
+    like($stderr, qr/^\QDOS type to be set contains 3 bytes: "C44"\E/, q{dos_type - set DOS type (too long length, check issued warning)});
 }
 #########################

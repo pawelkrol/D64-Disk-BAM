@@ -1,8 +1,7 @@
 #########################
 use strict;
 use warnings;
-use IO::Capture::Stderr;
-use IO::Capture::Stdout;
+use Capture::Tiny qw(capture_stderr);
 use Test::More tests => 20;
 use Text::Convert::PETSCII qw/:convert/;
 #########################
@@ -17,10 +16,9 @@ use Text::Convert::PETSCII qw/:convert/;
     sub get_named_bam_object {
         my ($convert, $disk_name) = @_;
         my $diskBAM = D64::Disk::BAM->new();
-        my $capture = IO::Capture::Stderr->new();
-        $capture->start();
-        $diskBAM->disk_name($convert, $disk_name);
-        $capture->stop();
+        my $stderr = capture_stderr {
+            $diskBAM->disk_name($convert, $disk_name);
+        };
         return $diskBAM;
     }
 }
@@ -41,12 +39,12 @@ use Text::Convert::PETSCII qw/:convert/;
 #########################
 {
     my $diskBAM = get_empty_bam_object();
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    my $disk_name = $diskBAM->disk_name(0, ascii_to_petscii('abcdefghijklmn'));
-    $capture->stop();
+    my $disk_name;
+    my $stderr = capture_stderr {
+        $disk_name = $diskBAM->disk_name(0, ascii_to_petscii('abcdefghijklmn'));
+    };
     is($disk_name, 'abcdefghijklmn', q{disk_name - set disk name (length = 14 bytes, without PETSCII conversion)});
-    like($capture->read, qr/^\QDisk name to be set contains 14 bytes: "abcdefghijklmn"\E/, q{disk_name - set disk name (length = 14 bytes, without PETSCII conversion)});
+    like($stderr, qr/^\QDisk name to be set contains 14 bytes: "abcdefghijklmn"\E/, q{disk_name - set disk name (length = 14 bytes, without PETSCII conversion)});
 }
 #########################
 {
@@ -69,12 +67,12 @@ use Text::Convert::PETSCII qw/:convert/;
 #########################
 {
     my $diskBAM = get_empty_bam_object();
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    my $disk_name = $diskBAM->disk_name(0, ascii_to_petscii('abcdefghijklmno'));
-    $capture->stop();
+    my $disk_name;
+    my $stderr = capture_stderr {
+        $disk_name = $diskBAM->disk_name(0, ascii_to_petscii('abcdefghijklmno'));
+    };
     is($disk_name, 'abcdefghijklmno', q{disk_name - set disk name (length = 15 bytes, without PETSCII conversion)});
-    like($capture->read, qr/^\QDisk name to be set contains 15 bytes: "abcdefghijklmno"\E/, q{disk_name - set disk name (length = 15 bytes, without PETSCII conversion)});
+    like($stderr, qr/^\QDisk name to be set contains 15 bytes: "abcdefghijklmno"\E/, q{disk_name - set disk name (length = 15 bytes, without PETSCII conversion)});
 }
 #########################
 {
@@ -115,21 +113,21 @@ use Text::Convert::PETSCII qw/:convert/;
 #########################
 {
     my $diskBAM = get_empty_bam_object();
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    my $disk_name = $diskBAM->disk_name(1, 'abcdefghijklmnopq');
-    $capture->stop();
+    my $disk_name;
+    my $stderr = capture_stderr {
+        $disk_name = $diskBAM->disk_name(1, 'abcdefghijklmnopq');
+    };
     is(petscii_to_ascii($disk_name), 'abcdefghijklmnop', q{disk_name - set disk name (length = 17 bytes, with PETSCII conversion)});
-    like($capture->read, qr/^\QDisk name to be set contains 17 bytes: "abcdefghijklmnopq"\E/, q{disk_name - set disk name (length = 17 bytes, with PETSCII conversion)});
+    like($stderr, qr/^\QDisk name to be set contains 17 bytes: "abcdefghijklmnopq"\E/, q{disk_name - set disk name (length = 17 bytes, with PETSCII conversion)});
 }
 #########################
 {
     my $diskBAM = get_empty_bam_object();
-    my $capture = IO::Capture::Stderr->new();
-    $capture->start();
-    my $disk_name = $diskBAM->disk_name(0, ascii_to_petscii('abcdefghijklmnopq'));
-    $capture->stop();
+    my $disk_name;
+    my $stderr = capture_stderr {
+        $disk_name = $diskBAM->disk_name(0, ascii_to_petscii('abcdefghijklmnopq'));
+    };
     is($disk_name, 'abcdefghijklmnop', q{disk_name - set disk name (length = 17 bytes, without PETSCII conversion)});
-    like($capture->read, qr/^\QDisk name to be set contains 17 bytes: "abcdefghijklmnopq"\E/, q{disk_name - set disk name (length = 17 bytes, without PETSCII conversion)});
+    like($stderr, qr/^\QDisk name to be set contains 17 bytes: "abcdefghijklmnopq"\E/, q{disk_name - set disk name (length = 17 bytes, without PETSCII conversion)});
 }
 #########################
