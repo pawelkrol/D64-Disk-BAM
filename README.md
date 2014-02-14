@@ -21,7 +21,7 @@ To install this module type the following:
 DOCUMENTATION
 -------------
 
-A comprehensive module documentation is available on [CPAN](http://search.cpan.org/~pawelkrol/D64-Disk-BAM/lib/D64/Disk/BAM.pm).
+A comprehensive module documentation is available on [CPAN](http://search.cpan.org/~pawelkrol/D64-Disk-BAM/lib/BAM.pm).
 
 COPYRIGHT AND LICENCE
 ---------------------
